@@ -2,6 +2,7 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using Microsoft.Identity.Web;
 using Sehha360.Data;
 using Sehha360.Models;
@@ -13,7 +14,7 @@ namespace Sehha360
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Env.Load();
 
@@ -51,6 +52,13 @@ namespace Sehha360
             .AddDefaultTokenProviders();
 
             var app = builder.Build();
+            using (var scopp = app.Services.CreateScope())
+            {
+
+                var roleManger = scopp.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                await IdentityDataInitializer.SeedRoleAsync(roleManger);
+
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

@@ -9,5 +9,6 @@ namespace Sehha360.Models
         public DateOnly BirthDate { get; set; }
         public Gender Gender { get; set; }
         public UserRole Role { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

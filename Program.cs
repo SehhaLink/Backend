@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using Microsoft.Identity.Web;
 using Sehha360.Data;
 using Sehha360.Models;
+using Sehha360.Models.Mapping;
 using Sehha360.Services.implementation;
 using Sehha360.Services.Interface;
 using System.Text.Json.Serialization;
@@ -39,6 +40,8 @@ namespace Sehha360
             var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
+            //Services
+            builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
             {

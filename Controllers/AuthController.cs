@@ -1,0 +1,52 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Sehha360.Models.ApiResponse;
+using Sehha360.Models.DTOs;
+using Sehha360.Services.implementation;
+using Sehha360.Services.Interface;
+
+namespace Sehha360.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(UserRegisterDTO registerDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).
+                    Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+            var response = await _authService.RegisterAsync(registerDTO);
+            if (response.Success)
+                return Ok(response);
+            else
+                return BadRequest(response);
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDTO loginDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).
+                    Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+            var response = await _authService.LoginAsync(loginDTO);
+            if (response.Success)
+                return Ok(response);
+            else
+                return BadRequest(response);
+        }
+    }
+}

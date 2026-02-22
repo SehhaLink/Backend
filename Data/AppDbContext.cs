@@ -13,6 +13,7 @@ namespace Sehha360.Data
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Medication> Medications { get; set; }
         public DbSet<MedicationReminders> MedicationReminders { get; set; }
+        public DbSet<OTP> OTPs { get; set; }
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }

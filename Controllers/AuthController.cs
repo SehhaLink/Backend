@@ -48,5 +48,33 @@ namespace Sehha360.Controllers
             else
                 return BadRequest(response);
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDTO forgotPasswordDTO){
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).
+                    Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+            var response = await _authService.ForgotPasswordAsync(forgotPasswordDTO);
+            if (response.Success)
+                return Ok(response);
+            else
+                return BadRequest(response);
+        }
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPasswordDTO){
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).
+                    Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+            var response = await _authService.ResetPasswordAsync(resetPasswordDTO);
+            if (response.Success)
+                return Ok(response);
+            else
+                return BadRequest(response);
+        }
     }
 }

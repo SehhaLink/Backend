@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Sehha360.Models;
 using Sehha360.Models.ApiResponse;
 using Sehha360.Models.DTOs;
+using Sehha360.Repositories.Interface;
 using Sehha360.Services.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Sehha360.Services.implementation
@@ -16,11 +19,15 @@ namespace Sehha360.Services.implementation
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly IMapper _mapper;
-        public AuthService(UserManager<AppUser> userManager, IMapper mapper, SignInManager<AppUser> signInManager)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
+        public AuthService(UserManager<AppUser> userManager, IMapper mapper, SignInManager<AppUser> signInManager, IUnitOfWork unitOfWork, IEmailService emailService)
         {
             _userManager = userManager;
             _mapper = mapper;
             _signInManager = signInManager;
+            _unitOfWork = unitOfWork;
+            _emailService = emailService;
         }
 
         public async Task<ApiResponse> LoginAsync(LoginDTO loginDTO)
@@ -62,6 +69,64 @@ namespace Sehha360.Services.implementation
                 return ApiResponse.FaliureResponse("User Register Failed", errors);
             }
             return ApiResponse.SuccessResponse("User Registered Successfully");
+        }
+        public async Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordDTO dto)
+        {
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return ApiResponse.SuccessResponse("If an account with that email exists, a password reset code has been sent.");
+            }
+            var otpCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+
+            var passwordResetOtp = new OTP
+            {
+                UserId = user.Id,
+                Email = user.Email,
+                OtpCode = otpCode,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                IsUsed = false
+            };
+
+            await _unitOfWork.OTPs.AddAsync(passwordResetOtp);
+            await _unitOfWork.SaveChangesAsync();
+            var emailSent = await _emailService.SendOtpAsync(user.Email!, otpCode);
+
+            if (!emailSent)
+            {
+                return ApiResponse.FaliureResponse($"Password reset OTP email failed to send for {user.Email}");
+            }
+
+            return ApiResponse.SuccessResponse("If an account with that email exists, a password reset code has been sent.");
+        }
+        public async Task<ApiResponse> ResetPasswordAsync(ResetPasswordDTO dto)
+        {
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return ApiResponse.FaliureResponse("Password reset failed", new List<string> { "Invalid email or OTP code" });
+            }
+            var otpRecord = await _unitOfWork.OTPs.GetValidOtpAsync(dto.Email, dto.Otp);
+
+            if (otpRecord == null)
+            {
+                return ApiResponse.FaliureResponse("Password reset failed", new List<string> { "Invalid or expired OTP code" });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.FaliureResponse("Password reset failed", errors);
+            }
+            otpRecord.IsUsed = true;
+            await _unitOfWork.SaveChangesAsync();
+
+            return ApiResponse.SuccessResponse("Password has been reset successfully. You can now log in with your new password.");
         }
         public async Task<string> GenerateJwtTokenAsync(AppUser appUser)
         {

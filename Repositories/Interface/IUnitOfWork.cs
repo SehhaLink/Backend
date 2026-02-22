@@ -1,6 +1,6 @@
 using Sehha360.Models;
 
-namespace Sehha360.Repositories
+namespace Sehha360.Repositories.Interface
 {
     public interface IUnitOfWork : IDisposable
     {
@@ -11,6 +11,7 @@ namespace Sehha360.Repositories
         IRepository<MedicationReminders> MedicationReminders { get; }
         IRepository<UserMedications> UserMedications { get; }
         IRepository<UserRelationships> UserRelationships { get; }
+        IOtpRepository OTPs { get; }
         Task<int> SaveChangesAsync();
     }
 }

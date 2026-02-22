@@ -1,13 +1,14 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Sehha360.Data;
+using Sehha360.Repositories.Interface;
 
-namespace Sehha360.Repositories
+namespace Sehha360.Repositories.Implementation
 {
     public class Repository<T> : IRepository<T> where T : class
     {
-        private readonly AppDbContext _context;
-        private readonly DbSet<T> _dbSet;
+        protected readonly AppDbContext _context;
+        protected readonly DbSet<T> _dbSet;
 
         public Repository(AppDbContext context)
         {

@@ -8,6 +8,8 @@ namespace Sehha360.Services.Interface
     {
         Task<ApiResponse> RegisterAsync(UserRegisterDTO userRegisterDTO);
         Task<ApiResponse> LoginAsync(LoginDTO loginDTO);
+        Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordDTO forgotPasswordDto);
+        Task<ApiResponse> ResetPasswordAsync(ResetPasswordDTO resetPasswordDto);
         Task<string> GenerateJwtTokenAsync(AppUser appUser);
     }
 }

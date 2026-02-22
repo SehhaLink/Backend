@@ -7,7 +7,8 @@ using Microsoft.Identity.Web;
 using Sehha360.Data;
 using Sehha360.Models;
 using Sehha360.Models.Mapping;
-using Sehha360.Repositories;
+using Sehha360.Repositories.Implementation;
+using Sehha360.Repositories.Interface;
 using Sehha360.Services.implementation;
 using Sehha360.Services.Interface;
 using System.Text.Json.Serialization;
@@ -42,6 +43,8 @@ namespace Sehha360
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
             //Services
+            builder.Services.AddScoped<IOtpRepository, OtpRepository>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

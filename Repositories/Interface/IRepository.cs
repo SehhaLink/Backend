@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Sehha360.Repositories
+namespace Sehha360.Repositories.Interface
 {
     public interface IRepository<T> where T : class
     {

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
-using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
 using Sehha360.Data;
 using Sehha360.Models;
 using Sehha360.Models.Mapping;
@@ -11,6 +11,7 @@ using Sehha360.Repositories.Implementation;
 using Sehha360.Repositories.Interface;
 using Sehha360.Services.implementation;
 using Sehha360.Services.Interface;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace Sehha360
@@ -24,9 +25,24 @@ namespace Sehha360
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
-
+          var securityKey = Environment.GetEnvironmentVariable("SecurityKey");
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(securityKey!))
+                };
+            });
             builder.Services.AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
                 {
@@ -47,6 +63,7 @@ namespace Sehha360
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddIdentity<AppUser, IdentityRole>(options =>

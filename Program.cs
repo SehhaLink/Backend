@@ -2,7 +2,6 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Sehha360.Data;
 using Sehha360.Models;
@@ -25,7 +24,23 @@ namespace Sehha360
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services
-          var securityKey = Environment.GetEnvironmentVariable("SecurityKey");
+            var securityKey = Environment.GetEnvironmentVariable("SecurityKey");
+
+            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(connectionString));
+
+            builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredLength = 6;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -43,6 +58,7 @@ namespace Sehha360
                         Encoding.UTF8.GetBytes(securityKey!))
                 };
             });
+
             builder.Services.AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
                 {
@@ -55,9 +71,6 @@ namespace Sehha360
 
             builder.Services.AddSwaggerGen();
 
-            var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connectionString));
             //Services
             builder.Services.AddScoped<IOtpRepository, OtpRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();
@@ -66,16 +79,6 @@ namespace Sehha360
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
-            {
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequiredLength = 6;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
 
             var app = builder.Build();
             using (var scopp = app.Services.CreateScope())

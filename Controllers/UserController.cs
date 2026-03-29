@@ -25,7 +25,7 @@ namespace Sehha360.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
-                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Restricted Access" }));
             }
 
             var response = await _userService.GetMeAsync(userId);

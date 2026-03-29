@@ -12,6 +12,7 @@ using Sehha360.Services.implementation;
 using Sehha360.Services.Interface;
 using System.Text;
 using System.Text.Json.Serialization;
+using Supabase;
 
 namespace Sehha360
 {
@@ -25,7 +26,8 @@ namespace Sehha360
 
             // Add services
             var securityKey = Environment.GetEnvironmentVariable("SecurityKey");
-
+            var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL") ?? builder.Configuration["Supabase:Url"];
+            var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY") ?? builder.Configuration["Supabase:Key"];
             var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
@@ -79,6 +81,10 @@ namespace Sehha360
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddSingleton(provider => new Client(supabaseUrl, supabaseKey, new SupabaseOptions { AutoConnectRealtime = true }));
+            builder.Services.AddScoped<IFileStorageService, SupabaseFileStorageService>();
+            builder.Services.AddScoped<IDocumentService, DocumentService>();
+
             builder.Services.AddHostedService<AccountCleanupService>();
 
             var app = builder.Build();

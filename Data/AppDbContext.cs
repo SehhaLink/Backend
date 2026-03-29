@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Sehha360.Models;
 
@@ -14,6 +14,8 @@ namespace Sehha360.Data
         public DbSet<Medication> Medications { get; set; }
         public DbSet<MedicationReminders> MedicationReminders { get; set; }
         public DbSet<OTP> OTPs { get; set; }
+        public DbSet<MedicalDocument> MedicalDocuments { get; set; }
+        public DbSet<DocumentAccessLog> DocumentAccessLogs { get; set; }
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Sehha360.Models.Enums;
 
 namespace Sehha360.Models
@@ -10,5 +10,7 @@ namespace Sehha360.Models
         public Gender Gender { get; set; }
         public UserRole Role { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsDeactivated { get; set; }
+        public DateTime? DeactivationDate { get; set; }
     }
 }

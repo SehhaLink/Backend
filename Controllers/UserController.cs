@@ -61,5 +61,41 @@ namespace Sehha360.Controllers
 
             return Unauthorized(response);
         }
+
+        [HttpPost("deactivate")]
+        public async Task<IActionResult> DeactivateMe()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
+            }
+
+            var response = await _userService.DeactivateMeAsync(userId);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
+
+        [HttpDelete("me")]
+        public async Task<IActionResult> DeleteMe()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
+            }
+
+            var response = await _userService.HardDeleteMeAsync(userId);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -42,10 +42,23 @@ namespace Sehha360.Services.implementation
             {
                 return ApiResponse.FaliureResponse("Login Failed", new List<string> { "Invalid email or password" });
             }
+
+            string message = "Login Successful";
+            if (user.IsDeactivated)
+            {
+                user.IsDeactivated = false;
+                user.DeactivationDate = null;
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (updateResult.Succeeded)
+                {
+                    message = "Login Successful. Your account has been reactivated.";
+                }
+            }
+
             var token = await GenerateJwtTokenAsync(user);
             var userResponse = _mapper.Map<UserResponseDTO>(user);
             userResponse.Token = token;
-            return ApiResponse.SuccessResponse("Login Successful", userResponse);
+            return ApiResponse.SuccessResponse(message, userResponse);
         }
 
         public async Task<ApiResponse> RegisterAsync(UserRegisterDTO userRegisterDTO)

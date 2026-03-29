@@ -68,5 +68,48 @@ namespace Sehha360.Services.implementation
             var responseDto = _mapper.Map<UserProfileDTO>(appUser);
             return ApiResponse.SuccessResponse("Profile updated successfully", responseDto);
         }
+        public async Task<ApiResponse> DeactivateMeAsync(string userId)
+        {
+            var appUser = await _userManager.FindByIdAsync(userId);
+            if (appUser == null)
+            {
+                return ApiResponse.FaliureResponse("User not found");
+            }
+
+            if (appUser.IsDeactivated)
+            {
+                return ApiResponse.FaliureResponse("Account is already deactivated");
+            }
+
+            appUser.IsDeactivated = true;
+            appUser.DeactivationDate = DateTime.UtcNow;
+
+            var result = await _userManager.UpdateAsync(appUser);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.FaliureResponse("Deactivation failed", errors);
+            }
+
+            return ApiResponse.SuccessResponse("Account deactivated successfully. You have 30 days to reactivate your account by logging in.");
+        }
+
+        public async Task<ApiResponse> HardDeleteMeAsync(string userId)
+        {
+            var appUser = await _userManager.FindByIdAsync(userId);
+            if (appUser == null)
+            {
+                return ApiResponse.FaliureResponse("User not found");
+            }
+
+            var result = await _userManager.DeleteAsync(appUser);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.FaliureResponse("Account deletion failed", errors);
+            }
+
+            return ApiResponse.SuccessResponse("Account and all associated data have been permanently deleted.");
+        }
     }
 }

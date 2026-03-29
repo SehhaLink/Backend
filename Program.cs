@@ -79,6 +79,7 @@ namespace Sehha360
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddHostedService<AccountCleanupService>();
 
             var app = builder.Build();
             using (var scopp = app.Services.CreateScope())

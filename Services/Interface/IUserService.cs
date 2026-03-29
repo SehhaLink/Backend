@@ -7,5 +7,7 @@ namespace Sehha360.Services.Interface
     {
         Task<ApiResponse> GetMeAsync(string userId);
         Task<ApiResponse> UpdateMeAsync(string userId, UpdateMeDTO dto);
+        Task<ApiResponse> DeactivateMeAsync(string userId);
+        Task<ApiResponse> HardDeleteMeAsync(string userId);
     }
 }

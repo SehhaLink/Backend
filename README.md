@@ -1,93 +1,290 @@
-# SehhaLink (Sehha360 Backend)
+# SehhaLink API Documentation
 
-SehhaLink is a secure medical document management and healthcare platform built with .NET 9.0. It allows patients and doctors to securely store, share, and manage medical records using cloud storage (Supabase) and encrypted communication.
+This document provides a detailed reference for the backend APIs available in SehhaLink (Sehha360).
 
-## 🚀 Tech Stack
+## Table of Contents
+- [SehhaLink API Documentation](#sehhalink-api-documentation)
+  - [Table of Contents](#table-of-contents)
+  - [Base URL](#base-url)
+  - [Authentication](#authentication)
+  - [1. Account APIs](#1-account-apis)
+    - [Register User](#register-user)
+    - [Login](#login)
+    - [Forgot Password](#forgot-password)
+    - [Reset Password](#reset-password)
+  - [2. Document APIs](#2-document-apis)
+    - [Upload Document](#upload-document)
+    - [Get Document URL](#get-document-url)
+  - [3. User Profile APIs](#3-user-profile-apis)
+    - [Get My Profile](#get-my-profile)
+    - [Update My Profile](#update-my-profile)
+    - [Deactivate Account](#deactivate-account)
+    - [Hard Delete Account](#hard-delete-account)
+  - [4. Enums](#4-enums)
+    - [UserRole](#userrole)
+    - [DocumentType](#documenttype)
+    - [DocumentProcessingStatus](#documentprocessingstatus)
 
-- **Framework**: ASP.NET Core 9.0 (Web API)
-- **Database**: PostgreSQL (Neon/Railway)
-- **Storage**: Supabase Storage (S3-compatible)
-- **Auth**: Entity Framework Core Identity + JWT
-- **Deployment**: Docker + Railway
+## Base URL
+`http://localhost:5000/api` (or your production url)
 
----
-
-## 🛠️ Setup & Installation
-
-### 1. Prerequisites
-- .NET 9.0 SDK
-- PostgreSQL instance
-- Supabase account (for Storage)
-
-### 2. Environment Variables
-Create a `.env` file in the root directory with the following variables:
-
-```text
-CONNECTION_STRING="your-postgresql-connection-string"
-SecurityKey="your-long-jwt-secret-key"
-SUPABASE_URL="https://your-project-id.supabase.co"
-SUPABASE_KEY="your-service-role-key"
-SUPABASE_BUCKET="medical-documents"
-
-# SMTP Settings (for OTP)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-SMTP_USERNAME="your-email@gmail.com"
-SMTP_PASSWORD="your-app-password"
-SMTP_FROM_EMAIL="your-email@gmail.com"
-SMTP_FROM_NAME="SehhaLink"
-```
-
-### 3. Run Locally
-```bash
-dotnet restore
-dotnet ef database update
-dotnet run
-```
+## Authentication
+Protected endpoints require authentication via JWT Bearer Token.
+- **Header**: `Authorization: Bearer <token>`
 
 ---
 
-## 📖 API Documentation
+## 1. Account APIs
+Base Path: `/api/Auth`
 
-### Authentication (`/api/Auth`)
+### Register User
+Creates a new Patient or Doctor account.
 
-| Endpoint | Method | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| `/register` | `POST` | Register a new user (Patient/Doctor) | No |
-| `/login` | `POST` | Authenticate and receive a JWT token | No |
-| `/forgot-password` | `POST` | Request an OTP via email for password reset | No |
-| `/reset-password` | `POST` | Reset password using the received OTP | No |
+- **URL**: `/register`
+- **Method**: `POST`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "password": "Password123!",
+    "confirmPassword": "Password123!",
+    "role": "Patient" // "Patient" or "Doctor"
+  }
+  ```
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "User Registered Successfully",
+      "data": "User Registered Successfully",
+      "errors": []
+    }
+    ```
 
-### Document Management (`/api/Documents`)
+### Login
+Authenticates a user and returns a JWT token.
 
-| Endpoint | Method | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| `/upload` | `POST` | Upload a file (PDF, JPEG, PNG, DICOM) - Max 20MB | Yes |
-| `/{id}/url` | `GET` | Generate a 15-minute secure signed URL for a file | Yes |
+- **URL**: `/login`
+- **Method**: `POST`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "email": "john@example.com",
+    "password": "Password123!"
+  }
+  ```
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Login Successful",
+      "data": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "errors": []
+    }
+    ```
 
-### User Profile (`/api/User`)
+### Forgot Password
+Initiates the password reset process by sending an OTP to the user's email.
 
-| Endpoint | Method | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| `/me` | `GET` | Get the current user's profile details | Yes |
-| `/me` | `PATCH` | Update profile (name, phone, etc.) | Yes |
-| `/deactivate` | `POST` | Soft-delete account (30-day recovery period) | Yes |
-| `/me` | `DELETE` | Request immediate hard-delete of all data | Yes |
+- **URL**: `/forgot-password`
+- **Method**: `POST`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "email": "john@example.com"
+  }
+  ```
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "If an account with that email exists, a password reset code has been sent.",
+      "data": null,
+      "errors": []
+    }
+    ```
+
+### Reset Password
+Verifies the OTP and resets the user's password.
+
+- **URL**: `/reset-password`
+- **Method**: `POST`
+- **Auth**: None
+- **Request Body**:
+  ```json
+  {
+    "email": "john@example.com",
+    "otp": "123456",
+    "newPassword": "NewPassword123!"
+  }
+  ```
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Password Reset Successfully",
+      "data": null,
+      "errors": []
+    }
+    ```
 
 ---
 
-## 🔒 Security Features
+## 2. Document APIs
+Base Path: `/api/Documents`
 
-- **JWT Authentication**: Secure stateless authentication for all protected routes.
-- **OTP Verification**: Case-insensitive OTP validation for password resets.
-- **Secure File Access**: Files are stored in private Supabase buckets; access is granted only via time-limited (15min) signed URLs.
-- **Data Privacy**: Support for GDPR-compliant account deactivation and hard-deletion.
+### Upload Document
+Uploads a new medical document for the authenticated patient.
 
-## 🐳 Deployment
+- **URL**: `/upload`
+- **Method**: `POST`
+- **Auth**: Required
+- **Request Body**: Multipart form data with a single `file`.
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Document uploaded successfully.",
+      "data": {
+        "id": 1,
+        "fileName": "report_pdf"
+      },
+      "errors": []
+    }
+    ```
 
-The project is pre-configured for **Railway** using the included `Dockerfile`.
+### Get Document URL
+Generates a 15-minute secure signed URL for a specific document.
 
-```bash
-# Build & Publish command used by Docker
-dotnet publish -c Release -o /app/publish
-```
+- **URL**: `/{id}/url`
+- **Method**: `GET`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Secure URL generated successfully.",
+      "data": {
+        "url": "https://signed-supabase-url...",
+        "expiresAt": "2023-10-27T10:15:00Z"
+      },
+      "errors": []
+    }
+    ```
+
+---
+
+## 3. User Profile APIs
+Base Path: `/api/User`
+
+### Get My Profile
+Retrieves the logged-in user's profile details.
+
+- **URL**: `/me`
+- **Method**: `GET`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Profile retrieved successfully",
+      "data": {
+        "id": "e98...",
+        "fullName": "John Doe",
+        "email": "john@example.com",
+        "role": "Patient"
+      },
+      "errors": []
+    }
+    ```
+
+### Update My Profile
+Updates the logged-in user's profile.
+
+- **URL**: `/me`
+- **Method**: `PATCH`
+- **Auth**: Required
+- **Request Body**:
+  ```json
+  {
+    "fullName": "John Updated",
+    "phoneNumber": "12345678"
+  }
+  ```
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Profile updated successfully.",
+      "data": null,
+      "errors": []
+    }
+    ```
+
+### Deactivate Account
+Soft-deletes the current account with a 30-day grace period.
+
+- **URL**: `/deactivate`
+- **Method**: `POST`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Account deactivated. You have 30 days to recover it.",
+      "data": null,
+      "errors": []
+    }
+    ```
+
+### Hard Delete Account
+Requests an immediate hard removal of all user data (GDPR compliant).
+
+- **URL**: `/me`
+- **Method**: `DELETE`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Hard delete request received. Your account will be removed permanently.",
+      "data": null,
+      "errors": []
+    }
+    ```
+
+---
+
+## 4. Enums
+
+### UserRole
+- `Patient`
+- `Doctor`
+- `Admin`
+
+### DocumentType
+- `PDF`
+- `JPEG`
+- `PNG`
+- `DICOM`
+
+### DocumentProcessingStatus
+- `Pending`
+- `Scanning`
+- `Clean`
+- `MalwareDetected`
+- `Quarantined`

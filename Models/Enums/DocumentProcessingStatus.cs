@@ -6,6 +6,8 @@ namespace Sehha360.Models.Enums
         Scanning,
         Clean,
         MalwareDetected,
-        Quarantined
+        Quarantined,
+        Processing,
+        Processed
     }
 }

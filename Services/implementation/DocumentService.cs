@@ -13,6 +13,8 @@ namespace Sehha360.Services.implementation
         private readonly IFileStorageService _storageService;
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<DocumentService> _logger;
+        private readonly IOcrService _ocrService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         private readonly string[] _allowedExtensions = { ".pdf", ".jpg", ".jpeg", ".png", ".dcm" };
         private const long _maxFileSize = 20 * 1024 * 1024; // 20 MB
@@ -21,12 +23,16 @@ namespace Sehha360.Services.implementation
             AppDbContext context,
             IFileStorageService storageService,
             UserManager<AppUser> userManager,
-            ILogger<DocumentService> logger)
+            ILogger<DocumentService> logger,
+            IOcrService ocrService,
+            IServiceScopeFactory scopeFactory)
         {
             _context = context;
             _storageService = storageService;
             _userManager = userManager;
             _logger = logger;
+            _ocrService = ocrService;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<ApiResponse> UploadDocumentAsync(IFormFile file, string patientId)
@@ -62,10 +68,26 @@ namespace Sehha360.Services.implementation
                 var filePath = await _storageService.UploadFileAsync(stream, fileName, file.ContentType);
                 
                 document.FilePath = filePath;
-                document.ProcessingStatus = DocumentProcessingStatus.Clean;
+                document.ProcessingStatus = DocumentProcessingStatus.Processing;
                 await _context.SaveChangesAsync();
 
-                return ApiResponse.SuccessResponse("Document uploaded successfully.", new { document.Id, document.FileName });
+                string extractedText = string.Empty;
+                try
+                {
+                    using var ocrStream = file.OpenReadStream();
+                    extractedText = await _ocrService.ExtractTextAsync(ocrStream, file.ContentType);
+
+                    document.ExtractedText = extractedText;
+                    document.ProcessingStatus = DocumentProcessingStatus.Processed;
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error during OCR for document {document.Id}");
+                    extractedText = $"OCR failed: {ex.Message}";
+                }
+
+                return ApiResponse.SuccessResponse("Document uploaded successfully.", new { document.Id, document.FileName, extractedText });
             }
             catch (Exception ex)
             {

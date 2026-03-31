@@ -28,6 +28,10 @@ This document provides a detailed reference for the backend APIs available in Se
 ## Base URL
 `http://localhost:5000/api` (or your production url)
 
+## Environment Variables
+Ensure the following variables are set in your `.env` file before running:
+- `OCR_SPACE_API_KEY`: API key for OCR.Space. Used for extracting text from medical documents (If omitted, uses public `helloworld` key).
+
 ## Authentication
 Protected endpoints require authentication via JWT Bearer Token.
 - **Header**: `Authorization: Bearer <token>`
@@ -156,7 +160,8 @@ Uploads a new medical document for the authenticated patient.
       "message": "Document uploaded successfully.",
       "data": {
         "id": 1,
-        "fileName": "report_pdf"
+        "fileName": "report_pdf",
+        "extractedText": "## Blood Test Results\n..."
       },
       "errors": []
     }
@@ -285,6 +290,8 @@ Requests an immediate hard removal of all user data (GDPR compliant).
 ### DocumentProcessingStatus
 - `Pending`
 - `Scanning`
+- `Processing`
+- `Processed`
 - `Clean`
 - `MalwareDetected`
 - `Quarantined`

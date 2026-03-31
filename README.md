@@ -6,6 +6,7 @@ This document provides a detailed reference for the backend APIs available in Se
 - [SehhaLink API Documentation](#sehhalink-api-documentation)
   - [Table of Contents](#table-of-contents)
   - [Base URL](#base-url)
+  - [Environment Variables](#environment-variables)
   - [Authentication](#authentication)
   - [1. Account APIs](#1-account-apis)
     - [Register User](#register-user)
@@ -100,6 +101,7 @@ Authenticates a user and returns a JWT token along with profile information.
         "fullName": "John Doe",
         "email": "john@example.com",
         "birthDate": "1990-01-01",
+        "age": 36,
         "gender": "Male",
         "createdAt": "2023-10-27T10:15:00Z",
         "role": "Patient",
@@ -227,6 +229,7 @@ Retrieves the logged-in user's profile details.
         "fullName": "John Doe",
         "email": "john@example.com",
         "birthDate": "1990-01-01",
+        "age": 36,
         "gender": "Male",
         "createdAt": "2023-10-27T10:15:00Z",
         "role": "Patient",
@@ -261,6 +264,7 @@ Updates the logged-in user's profile.
         "fullName": "John Updated",
         "email": "john@example.com",
         "birthDate": "1990-01-01",
+        "age": 36,
         "gender": "Male",
         "createdAt": "2023-10-27T10:15:00Z",
         "role": "Patient",

@@ -84,7 +84,7 @@ namespace Sehha360
             builder.Services.AddSingleton(provider => new Client(supabaseUrl, supabaseKey, new SupabaseOptions { AutoConnectRealtime = true }));
             builder.Services.AddScoped<IFileStorageService, SupabaseFileStorageService>();
             builder.Services.AddScoped<IDocumentService, DocumentService>();
-            builder.Services.AddScoped<IOcrService, OcrSpaceService>();
+            builder.Services.AddScoped<IOcrService, PaddleOcrApiService>();
 
             builder.Services.AddHostedService<AccountCleanupService>();
 

@@ -85,6 +85,7 @@ namespace Sehha360
             builder.Services.AddScoped<IFileStorageService, SupabaseFileStorageService>();
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IOcrService, PaddleOcrApiService>();
+            builder.Services.AddScoped<ILlmSummaryService, GroqSummaryService>();
 
             builder.Services.AddHostedService<AccountCleanupService>();
 

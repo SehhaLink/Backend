@@ -71,23 +71,59 @@ namespace Sehha360.Services.implementation
                 document.ProcessingStatus = DocumentProcessingStatus.Processing;
                 await _context.SaveChangesAsync();
 
-                string extractedText = string.Empty;
-                try
-                {
-                    using var ocrStream = file.OpenReadStream();
-                    extractedText = await _ocrService.ExtractTextAsync(ocrStream, file.ContentType);
+                var docId = document.Id;
+                
+                // Read file to memory stream so it's not disposed when request ends
+                var backgroundMemoryStream = new MemoryStream();
+                await file.CopyToAsync(backgroundMemoryStream);
+                var contentType = file.ContentType;
 
-                    document.ExtractedText = extractedText;
-                    document.ProcessingStatus = DocumentProcessingStatus.Processed;
-                    await _context.SaveChangesAsync();
-                }
-                catch (Exception ex)
+                _ = Task.Run(async () =>
                 {
-                    _logger.LogError(ex, $"Error during OCR for document {document.Id}");
-                    extractedText = $"OCR failed: {ex.Message}";
-                }
+                    try
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var ocrService = scope.ServiceProvider.GetRequiredService<IOcrService>();
+                        var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<DocumentService>>();
 
-                return ApiResponse.SuccessResponse("Document uploaded successfully.", new { document.Id, document.FileName, extractedText });
+                        // Reset stream position before reading
+                        backgroundMemoryStream.Position = 0;
+                        var extractedText = await ocrService.ExtractTextAsync(backgroundMemoryStream, contentType);
+
+                        string summaryText = string.Empty;
+                        if (!extractedText.StartsWith("OCR failed") && !extractedText.StartsWith("OCR exception") && !extractedText.StartsWith("No text"))
+                        {
+                            summaryText = await summaryService.SummarizeMedicalTextAsync(extractedText);
+                        }
+                        else
+                        {
+                            summaryText = "Summarization skipped due to failed text extraction.";
+                        }
+
+                        var doc = await dbContext.MedicalDocuments.FindAsync(docId);
+                        if (doc != null)
+                        {
+                            doc.ExtractedText = extractedText;
+                            doc.PatientSummary = summaryText;
+                            doc.ProcessingStatus = DocumentProcessingStatus.Processed;
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        using var errorScope = _scopeFactory.CreateScope();
+                        var errorLogger = errorScope.ServiceProvider.GetRequiredService<ILogger<DocumentService>>();
+                        errorLogger.LogError(ex, "Error during background processing for document {DocId}", docId);
+                    }
+                    finally
+                    {
+                        backgroundMemoryStream.Dispose();
+                    }
+                });
+
+                return ApiResponse.SuccessResponse("Document uploaded successfully and is being processed in the background. Check back shortly for the summary.", new { document.Id, document.FileName });
             }
             catch (Exception ex)
             {

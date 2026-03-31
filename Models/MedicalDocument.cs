@@ -13,6 +13,7 @@ namespace Sehha360.Models
         public DateTime UploadedAt { get; set; }
         public DocumentProcessingStatus ProcessingStatus { get; set; }
         public string? ExtractedText { get; set; }
+        public string? PatientSummary { get; set; }
 
         [ForeignKey("Patient")]
         public string PatientId { get; set; }

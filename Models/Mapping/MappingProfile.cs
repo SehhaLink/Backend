@@ -10,7 +10,8 @@ namespace Sehha360.Models.Mapping
             CreateMap<UserRegisterDTO,AppUser>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest=>dest.CreatedAt,opt=>opt.MapFrom(src=> DateTime.UtcNow));
-            CreateMap<UserResponseDTO,AppUser>().ReverseMap();
+            CreateMap<UserResponseDTO,AppUser>().ForMember(dest=>dest.Age,opt=>opt.MapFrom(src=> DateTime.UtcNow.Year-src.BirthDate.Year))
+            .ReverseMap();
             CreateMap<AppUser, UserProfileDTO>();
         }
     }

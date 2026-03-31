@@ -31,7 +31,10 @@ This document provides a detailed reference for the backend APIs available in Se
 
 ## Environment Variables
 Ensure the following variables are set in your `.env` file before running:
-- `OCR_SPACE_API_KEY`: API key for OCR.Space. Used for extracting text from medical documents (If omitted, uses public `helloworld` key).
+- `OCR_SPACE_API_KEY`: API key for OCR.Space (optional fallback).
+- `PADDLE_OCR_URL`: URL for the PaddleOCR layout parsing service.
+- `PADDLE_OCR_TOKEN`: Authorization token for the PaddleOCR service.
+- `GROQ_API_KEY`: API key for Groq AI to generate patient-friendly medical summaries.
 
 ## Authentication
 Protected endpoints require authentication via JWT Bearer Token.
@@ -173,15 +176,15 @@ Uploads a new medical document for the authenticated patient.
     ```json
     {
       "success": true,
-      "message": "Document uploaded successfully.",
+      "message": "Document uploaded successfully and is being processed in the background. Check back shortly for the summary.",
       "data": {
         "id": 1,
-        "fileName": "report_pdf",
-        "extractedText": "## Blood Test Results\n..."
+        "fileName": "report_pdf"
       },
       "errors": []
     }
     ```
+    > **Note:** The document text extraction (OCR) and AI medical summarization (Groq) are processed asynchronously to ensure fast upload response times. The `ExtractedText`, `PatientSummary`, and `ProcessingStatus` properties on the backend will automatically update once the background tasks complete.
 
 ### Get Document URL
 Generates a 15-minute secure signed URL for a specific document.

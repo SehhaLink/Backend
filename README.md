@@ -21,6 +21,7 @@ This document provides a detailed reference for the backend APIs available in Se
     - [Deactivate Account](#deactivate-account)
     - [Hard Delete Account](#hard-delete-account)
   - [4. Enums](#4-enums)
+    - [Gender](#gender)
     - [UserRole](#userrole)
     - [DocumentType](#documenttype)
     - [DocumentProcessingStatus](#documentprocessingstatus)
@@ -54,7 +55,10 @@ Creates a new Patient or Doctor account.
     "email": "john@example.com",
     "password": "Password123!",
     "confirmPassword": "Password123!",
-    "role": "Patient" // "Patient" or "Doctor"
+    "birthDate": "1990-01-01",
+    "gender": "Male",
+    "phoneNumber": "1234567890",
+    "role": "Patient"
   }
   ```
 - **Response**:
@@ -63,13 +67,13 @@ Creates a new Patient or Doctor account.
     {
       "success": true,
       "message": "User Registered Successfully",
-      "data": "User Registered Successfully",
+      "data": null,
       "errors": []
     }
     ```
 
 ### Login
-Authenticates a user and returns a JWT token.
+Authenticates a user and returns a JWT token along with profile information.
 
 - **URL**: `/login`
 - **Method**: `POST`
@@ -78,7 +82,8 @@ Authenticates a user and returns a JWT token.
   ```json
   {
     "email": "john@example.com",
-    "password": "Password123!"
+    "password": "Password123!",
+    "rememberMe": false
   }
   ```
 - **Response**:
@@ -87,7 +92,17 @@ Authenticates a user and returns a JWT token.
     {
       "success": true,
       "message": "Login Successful",
-      "data": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "data": {
+        "id": "123e4567-e89b-12d3...",
+        "fullName": "John Doe",
+        "email": "john@example.com",
+        "birthDate": "1990-01-01",
+        "gender": "Male",
+        "createdAt": "2023-10-27T10:15:00Z",
+        "role": "Patient",
+        "phoneNumber": "1234567890",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+      },
       "errors": []
     }
     ```
@@ -126,7 +141,8 @@ Verifies the OTP and resets the user's password.
   {
     "email": "john@example.com",
     "otp": "123456",
-    "newPassword": "NewPassword123!"
+    "newPassword": "NewPassword123!",
+    "confirmPassword": "NewPassword123!"
   }
   ```
 - **Response**:
@@ -134,7 +150,7 @@ Verifies the OTP and resets the user's password.
     ```json
     {
       "success": true,
-      "message": "Password Reset Successfully",
+      "message": "Password has been reset successfully. You can now log in with your new password.",
       "data": null,
       "errors": []
     }
@@ -203,12 +219,15 @@ Retrieves the logged-in user's profile details.
     ```json
     {
       "success": true,
-      "message": "Profile retrieved successfully",
+      "message": "User profile retrieved successfully",
       "data": {
-        "id": "e98...",
         "fullName": "John Doe",
         "email": "john@example.com",
-        "role": "Patient"
+        "birthDate": "1990-01-01",
+        "gender": "Male",
+        "createdAt": "2023-10-27T10:15:00Z",
+        "role": "Patient",
+        "phoneNumber": "1234567890"
       },
       "errors": []
     }
@@ -224,7 +243,9 @@ Updates the logged-in user's profile.
   ```json
   {
     "fullName": "John Updated",
-    "phoneNumber": "12345678"
+    "birthDate": "1990-01-01",
+    "gender": "Male",
+    "phoneNumber": "1234567890"
   }
   ```
 - **Response**:
@@ -232,8 +253,16 @@ Updates the logged-in user's profile.
     ```json
     {
       "success": true,
-      "message": "Profile updated successfully.",
-      "data": null,
+      "message": "Profile updated successfully",
+      "data": {
+        "fullName": "John Updated",
+        "email": "john@example.com",
+        "birthDate": "1990-01-01",
+        "gender": "Male",
+        "createdAt": "2023-10-27T10:15:00Z",
+        "role": "Patient",
+        "phoneNumber": "1234567890"
+      },
       "errors": []
     }
     ```
@@ -249,7 +278,7 @@ Soft-deletes the current account with a 30-day grace period.
     ```json
     {
       "success": true,
-      "message": "Account deactivated. You have 30 days to recover it.",
+      "message": "Account deactivated successfully. You have 30 days to reactivate your account by logging in.",
       "data": null,
       "errors": []
     }
@@ -266,7 +295,7 @@ Requests an immediate hard removal of all user data (GDPR compliant).
     ```json
     {
       "success": true,
-      "message": "Hard delete request received. Your account will be removed permanently.",
+      "message": "Account and all associated data have been permanently deleted.",
       "data": null,
       "errors": []
     }
@@ -275,11 +304,15 @@ Requests an immediate hard removal of all user data (GDPR compliant).
 ---
 
 ## 4. Enums
+When passing enum values in JSON payloads, use the string representations listed below, as the API uses string conversion for enums.
+
+### Gender
+- `Male`
+- `Female`
 
 ### UserRole
-- `Patient`
 - `Doctor`
-- `Admin`
+- `Patient`
 
 ### DocumentType
 - `PDF`
@@ -290,8 +323,8 @@ Requests an immediate hard removal of all user data (GDPR compliant).
 ### DocumentProcessingStatus
 - `Pending`
 - `Scanning`
-- `Processing`
-- `Processed`
 - `Clean`
 - `MalwareDetected`
 - `Quarantined`
+- `Processing`
+- `Processed`

@@ -178,7 +178,7 @@ Uploads a new medical document for the authenticated patient.
     ```json
     {
       "success": true,
-      "message": "Document uploaded successfully and is being processed in the background. Check back shortly for the summary.",
+      "message": "Document uploaded successfully and text extraction is being processed in the background.",
       "data": {
         "id": 1,
         "fileName": "report_pdf"
@@ -186,7 +186,27 @@ Uploads a new medical document for the authenticated patient.
       "errors": []
     }
     ```
-    > **Note:** The document text extraction (OCR) and AI medical summarization (Groq) are processed asynchronously to ensure fast upload response times. The `ExtractedText`, `PatientSummary`, and `ProcessingStatus` properties on the backend will automatically update once the background tasks complete.
+    > **Note:** Document text extraction (OCR) happens automatically in the background. Once the extraction is complete, you can call the `/summarize` endpoint to generate an AI medical summary.
+
+### Summarize Document
+Generates a patient-friendly AI medical summary for a previously uploaded document.
+
+- **URL**: `/{id}/summarize`
+- **Method**: `POST`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Medical summary generated successfully.",
+      "data": {
+        "summary": "## Summary\nYour blood test results show..."
+      },
+      "errors": []
+    }
+    ```
+  - `400 Bad Request`: If OCR extraction is not yet complete or the document is not medical.
 
 ### Get Document URL
 Generates a 15-minute secure signed URL for a specific document.

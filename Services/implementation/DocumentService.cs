@@ -92,21 +92,10 @@ namespace Sehha360.Services.implementation
                         backgroundMemoryStream.Position = 0;
                         var extractedText = await ocrService.ExtractTextAsync(backgroundMemoryStream, contentType);
 
-                        string summaryText = string.Empty;
-                        if (!extractedText.StartsWith("OCR failed") && !extractedText.StartsWith("OCR exception") && !extractedText.StartsWith("No text"))
-                        {
-                            summaryText = await summaryService.SummarizeMedicalTextAsync(extractedText);
-                        }
-                        else
-                        {
-                            summaryText = "Summarization skipped due to failed text extraction.";
-                        }
-
                         var doc = await dbContext.MedicalDocuments.FindAsync(docId);
                         if (doc != null)
                         {
                             doc.ExtractedText = extractedText;
-                            doc.PatientSummary = summaryText;
                             doc.ProcessingStatus = DocumentProcessingStatus.Processed;
                             await dbContext.SaveChangesAsync();
                         }
@@ -168,6 +157,39 @@ namespace Sehha360.Services.implementation
             {
                 _logger.LogError(ex, $"Error generating pre-signed URL for document {documentId}");
                 return ApiResponse.FaliureResponse("Error generating download link. Please try again later.");
+            }
+        }
+
+        public async Task<ApiResponse> SummarizeDocumentAsync(int documentId, string userId)
+        {
+            var document = await _context.MedicalDocuments.FindAsync(documentId);
+            if (document == null)
+                return ApiResponse.FaliureResponse("Document not found");
+
+            if (document.PatientId != userId)
+                return ApiResponse.FaliureResponse("Unauthorized to summarize this document");
+
+            if (string.IsNullOrWhiteSpace(document.ExtractedText) || document.ExtractedText.StartsWith("OCR failed"))
+                return ApiResponse.FaliureResponse("Document text hasn't been extracted yet or extraction failed. Please wait a moment or try re-uploading.");
+
+            try
+            {
+                // Resolve AI service through scope to ensure thread safety or DI lifestyle
+                using var scope = _scopeFactory.CreateScope();
+                var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
+
+                var summary = await summaryService.SummarizeMedicalTextAsync(document.ExtractedText);
+                
+                document.PatientSummary = summary;
+                // Keep Processed status since it was already set after OCR, but update is fine
+                await _context.SaveChangesAsync();
+
+                return ApiResponse.SuccessResponse("Medical summary generated successfully.", new { summary });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating summary for document {DocId}", documentId);
+                return ApiResponse.FaliureResponse("Error generating medical summary. Please try again later.");
             }
         }
 

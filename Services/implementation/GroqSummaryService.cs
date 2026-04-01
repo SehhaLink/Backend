@@ -33,7 +33,17 @@ namespace Sehha360.Services.implementation
 
             try
             {
-                var prompt = "You are a helpful medical assistant for Sehha360 app. A patient has uploaded their medical document or test results. Explain the findings in simple, easily understandable words for the patient. Clarify what complex medical jargon or numbers mean for an average person. Be concise, empathetic, and strictly respond cleanly in markdown format. Do not provide a formal medical diagnosis. Tell the patient to always consult their doctor and if the document text is not medical tell the user that and tell him to uplaod medical document just response with this response is this case (Provided document is not medical please uplaod medical document). Here is the extracted text from their document:\n\n" + extractedText;
+                var prompt = @"You are a strict medical parser for the Sehha360 app. Analyze the following extracted text from a user upload.
+First, determine if the text is a medical document, health-related test result, or prescription.
+If it is NOT a medical document, you MUST reply with EXACTLY this phrase and nothing else: ""Provided document is not medical. Please upload a medical document.""
+If it IS a medical document, provide a summary explaining the findings in simple, patient-friendly terms. Clarify any medical jargon or numbers.
+CRITICAL RULES:
+1. DO NOT include ANY greetings, conversational filler, introductions, or closing encouragements (e.g., no ""Hello"", no ""Here is your summary""). Start directly with the markdown formatted data.
+2. Tell the patient to always consult their doctor at the very end.
+3. Keep the output clean and strict.
+
+TEXT TO ANALYZE:
+" + extractedText;
 
                 var payload = new
                 {

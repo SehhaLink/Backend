@@ -15,6 +15,7 @@ This document provides a detailed reference for the backend APIs available in Se
     - [Reset Password](#reset-password)
   - [2. Document APIs](#2-document-apis)
     - [Upload Document](#upload-document)
+    - [Summarize Document](#summarize-document)
     - [Get Document URL](#get-document-url)
   - [3. User Profile APIs](#3-user-profile-apis)
     - [Get My Profile](#get-my-profile)

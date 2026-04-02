@@ -11,11 +11,13 @@ namespace Sehha360.Services.implementation
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
+        private readonly IFileStorageService _storageService;
 
-        public UserService(UserManager<AppUser> userManager, IMapper mapper)
+        public UserService(UserManager<AppUser> userManager, IMapper mapper, IFileStorageService storageService)
         {
             _userManager = userManager;
             _mapper = mapper;
+            _storageService = storageService;
         }
 
         public async Task<ApiResponse> GetMeAsync(string userId)
@@ -27,6 +29,10 @@ namespace Sehha360.Services.implementation
             }
 
             var dto = _mapper.Map<UserProfileDTO>(appUser);
+            if (!string.IsNullOrEmpty(appUser.ProfilePictureKey))
+            {
+                dto.ProfilePictureUrl = await _storageService.GetPreSignedUrlAsync(appUser.ProfilePictureKey, TimeSpan.FromHours(1));
+            }
             return ApiResponse.SuccessResponse("User profile retrieved successfully", dto);
         }
 
@@ -66,6 +72,10 @@ namespace Sehha360.Services.implementation
             }
 
             var responseDto = _mapper.Map<UserProfileDTO>(appUser);
+            if (!string.IsNullOrEmpty(appUser.ProfilePictureKey))
+            {
+                responseDto.ProfilePictureUrl = await _storageService.GetPreSignedUrlAsync(appUser.ProfilePictureKey, TimeSpan.FromHours(1));
+            }
             return ApiResponse.SuccessResponse("Profile updated successfully", responseDto);
         }
         public async Task<ApiResponse> DeactivateMeAsync(string userId)
@@ -110,6 +120,54 @@ namespace Sehha360.Services.implementation
             }
 
             return ApiResponse.SuccessResponse("Account and all associated data have been permanently deleted.");
+        }
+
+        public async Task<ApiResponse> UploadProfilePictureAsync(string userId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return ApiResponse.FaliureResponse("No file uploaded");
+
+            if (file.Length > 5 * 1024 * 1024)
+                return ApiResponse.FaliureResponse("File size exceeds 5 MB limit");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension))
+                return ApiResponse.FaliureResponse("Invalid file type. Only JPG, JPEG, and PNG are allowed.");
+
+            var appUser = await _userManager.FindByIdAsync(userId);
+            if (appUser == null)
+            {
+                return ApiResponse.FaliureResponse("User not found");
+            }
+
+            try
+            {
+                // Delete old profile picture if exists
+                if (!string.IsNullOrEmpty(appUser.ProfilePictureKey))
+                {
+                    await _storageService.DeleteFileAsync(appUser.ProfilePictureKey);
+                }
+
+                using var stream = file.OpenReadStream();
+                var key = await _storageService.UploadFileAsync(stream, $"profile_{userId}{extension}", file.ContentType);
+
+                appUser.ProfilePictureKey = key;
+                var result = await _userManager.UpdateAsync(appUser);
+
+                if (!result.Succeeded)
+                {
+                    await _storageService.DeleteFileAsync(key); // Rollback storage
+                    return ApiResponse.FaliureResponse("Failed to update user profile with new image key.");
+                }
+
+                var signedUrl = await _storageService.GetPreSignedUrlAsync(key, TimeSpan.FromHours(1));
+                return ApiResponse.SuccessResponse("Profile picture updated successfully", new { imageUrl = signedUrl });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse.FaliureResponse($"Error uploading profile picture: {ex.Message}");
+            }
         }
     }
 }

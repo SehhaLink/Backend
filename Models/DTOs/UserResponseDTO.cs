@@ -1,4 +1,4 @@
-﻿using Sehha360.Models.Enums;
+using Sehha360.Models.Enums;
 
 namespace Sehha360.Models.DTOs
 {
@@ -14,6 +14,6 @@ namespace Sehha360.Models.DTOs
         public UserRole Role { get; set; }
         public string PhoneNumber { get; set; }
         public string Token { get; set; }
-
+        public string? ProfilePictureUrl { get; set; }
     }
 }

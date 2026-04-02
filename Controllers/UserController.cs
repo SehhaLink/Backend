@@ -97,5 +97,23 @@ namespace Sehha360.Controllers
 
             return BadRequest(response);
         }
+
+        [HttpPost("Upload-image")]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
+            }
+
+            var response = await _userService.UploadProfilePictureAsync(userId, file);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
     }
 }

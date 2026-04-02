@@ -16,10 +16,13 @@ This document provides a detailed reference for the backend APIs available in Se
   - [2. Document APIs](#2-document-apis)
     - [Upload Document](#upload-document)
     - [Summarize Document](#summarize-document)
+    - [Get Document Summary](#get-document-summary)
+    - [Get History Summary](#get-history-summary)
     - [Get Document URL](#get-document-url)
   - [3. User Profile APIs](#3-user-profile-apis)
     - [Get My Profile](#get-my-profile)
     - [Update My Profile](#update-my-profile)
+    - [Upload Profile Picture](#upload-profile-picture)
     - [Deactivate Account](#deactivate-account)
     - [Hard Delete Account](#hard-delete-account)
   - [4. Enums](#4-enums)
@@ -336,6 +339,23 @@ Updates the logged-in user's profile.
         "phoneNumber": "1234567890"
       },
       "errors": []
+    }
+    ```
+
+### Upload Profile Picture
+Uploads a profile picture for the authenticated user.
+
+- **URL**: `/Upload-image`
+- **Method**: `POST`
+- **Auth**: Required
+- **Request Body**: Multipart form data with a single `file`.
+- **Response**:
+  - `200 OK`: 
+    ```json
+    {
+      "success": true,
+      "message": "Profile picture updated successfully",
+      "data": { "imageUrl": "https://..." }
     }
     ```
 

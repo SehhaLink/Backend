@@ -12,5 +12,6 @@ namespace Sehha360.Models
         public DateTime CreatedAt { get; set; }
         public bool IsDeactivated { get; set; }
         public DateTime? DeactivationDate { get; set; }
+        public string? ProfilePictureKey { get; set; }
     }
 }

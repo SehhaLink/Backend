@@ -3,6 +3,7 @@ using Sehha360.Data;
 using Sehha360.Models;
 using Sehha360.Models.ApiResponse;
 using Sehha360.Models.Enums;
+using Sehha360.Repositories.Interface;
 using Sehha360.Services.Interface;
 
 namespace Sehha360.Services.implementation
@@ -59,7 +60,7 @@ namespace Sehha360.Services.implementation
                 FilePath = string.Empty
             };
 
-            _unitOfWork.MedicalDocuments.AddAsync(document);
+            await _unitOfWork.MedicalDocuments.AddAsync(document);
             await _unitOfWork.SaveChangesAsync();
 
             try
@@ -143,7 +144,7 @@ namespace Sehha360.Services.implementation
             {
                 var url = await _storageService.GetPreSignedUrlAsync(document.FilePath, TimeSpan.FromMinutes(15));
                 
-                _unitOfWork.DocumentAccessLogs.AddAsync(new DocumentAccessLog
+                await _unitOfWork.DocumentAccessLogs.AddAsync(new DocumentAccessLog
                 {
                     DocumentId = document.Id,
                     AccessedByUserId = userId,

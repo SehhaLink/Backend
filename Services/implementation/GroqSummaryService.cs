@@ -96,5 +96,87 @@ TEXT TO ANALYZE:
                 return $"Summarization error: {ex.Message}";
             }
         }
+        public async Task<string> SummarizeMedicalHistoryAsync(IEnumerable<string> summaryHistory)
+        {
+            if (summaryHistory == null || !summaryHistory.Any())
+                return "No medical history available to summarize.";
+
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                _logger.LogWarning("Groq API Key is missing. History summarization will be skipped.");
+                return "Summarization skipped: Groq API key is not configured.";
+            }
+
+            try
+            {
+                var historyText = string.Join("\n\n---\n\n", summaryHistory);
+                var prompt = @"You are a medical history aggregator for the Sehha360 app. 
+You will be provided with a series of individual medical reports and test summaries belonging to a single patient, ordered chronologically.
+Your task is to analyze these summaries and provide a single, high-level ""Master Health Overview"".
+
+GOALS:
+1. Summarize the patient's overall health journey.
+2. Identify trends (e.g. ""Your blood pressure has consistently decreased over the last 6 months"").
+3. Note any recurring issues or significant improvements.
+4. Provide a concise, structured timeline of major events.
+
+STRICT RULES:
+1. DO NOT include any greetings, introductions, or conversational filler.
+2. Use professional yet simple, patient-friendly language.
+3. Use Markdown for formatting (headings, bullet points).
+4. ALWAYS end with a disclaimer: ""This is an AI-generated aggregation. Please consult your physician for a full clinical review of your history.""
+
+PATIENT SUMMARY HISTORY:
+" + historyText;
+
+                var payload = new
+                {
+                    model = "openai/gpt-oss-120b",
+                    temperature = 0.7, // Slightly lower for history aggregation to be more grounded
+                    max_completion_tokens = 8192,
+                    top_p = 1,
+                    stream = false,
+                    messages = new []
+                    {
+                        new { role = "user", content = prompt }
+                    }
+                };
+
+                var jsonPayload = JsonSerializer.Serialize(payload);
+                using var requestContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Post, GroqUrl);
+                requestMessage.Headers.Add("Authorization", $"Bearer {_apiKey}");
+                requestMessage.Content = requestContent;
+
+                var response = await _httpClient.SendAsync(requestMessage);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Groq API failed: {StatusCode} - {Body}", response.StatusCode, responseBody);
+                    return $"History summarization failed: HTTP {response.StatusCode} from Groq API.";
+                }
+
+                using var doc = JsonDocument.Parse(responseBody);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    var firstChoice = choices[0];
+                    if (firstChoice.TryGetProperty("message", out var message) && message.TryGetProperty("content", out var content))
+                    {
+                        return content.GetString()?.Trim() ?? "Failed to generate a readable history overview.";
+                    }
+                }
+
+                return "Unexpected API response format from Groq during history aggregation.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception during Groq history summarization.");
+                return $"Summarization error: {ex.Message}";
+            }
+        }
     }
 }

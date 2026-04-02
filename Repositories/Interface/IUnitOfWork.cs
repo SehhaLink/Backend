@@ -11,6 +11,8 @@ namespace Sehha360.Repositories.Interface
         IRepository<MedicationReminders> MedicationReminders { get; }
         IRepository<UserMedications> UserMedications { get; }
         IRepository<UserRelationships> UserRelationships { get; }
+        IRepository<MedicalDocument> MedicalDocuments { get; }
+        IRepository<DocumentAccessLog> DocumentAccessLogs { get; }
         IOtpRepository OTPs { get; }
         Task<int> SaveChangesAsync();
     }

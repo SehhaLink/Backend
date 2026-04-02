@@ -9,7 +9,7 @@ namespace Sehha360.Services.implementation
 {
     public class DocumentService : IDocumentService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _storageService;
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<DocumentService> _logger;
@@ -20,14 +20,14 @@ namespace Sehha360.Services.implementation
         private const long _maxFileSize = 20 * 1024 * 1024; // 20 MB
 
         public DocumentService(
-            AppDbContext context,
+            IUnitOfWork unitOfWork,
             IFileStorageService storageService,
             UserManager<AppUser> userManager,
             ILogger<DocumentService> logger,
             IOcrService ocrService,
             IServiceScopeFactory scopeFactory)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _storageService = storageService;
             _userManager = userManager;
             _logger = logger;
@@ -59,8 +59,8 @@ namespace Sehha360.Services.implementation
                 FilePath = string.Empty
             };
 
-            _context.MedicalDocuments.Add(document);
-            await _context.SaveChangesAsync();
+            _unitOfWork.MedicalDocuments.AddAsync(document);
+            await _unitOfWork.SaveChangesAsync();
 
             try
             {
@@ -69,7 +69,7 @@ namespace Sehha360.Services.implementation
                 
                 document.FilePath = filePath;
                 document.ProcessingStatus = DocumentProcessingStatus.Processing;
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 var docId = document.Id;
                 
@@ -85,19 +85,19 @@ namespace Sehha360.Services.implementation
                         using var scope = _scopeFactory.CreateScope();
                         var ocrService = scope.ServiceProvider.GetRequiredService<IOcrService>();
                         var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
-                        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                         var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<DocumentService>>();
 
                         // Reset stream position before reading
                         backgroundMemoryStream.Position = 0;
                         var extractedText = await ocrService.ExtractTextAsync(backgroundMemoryStream, contentType);
 
-                        var doc = await dbContext.MedicalDocuments.FindAsync(docId);
+                        var doc = await uow.MedicalDocuments.GetByIdAsync(docId);
                         if (doc != null)
                         {
                             doc.ExtractedText = extractedText;
                             doc.ProcessingStatus = DocumentProcessingStatus.Processed;
-                            await dbContext.SaveChangesAsync();
+                            await uow.SaveChangesAsync();
                         }
                     }
                     catch (Exception ex)
@@ -123,7 +123,7 @@ namespace Sehha360.Services.implementation
 
         public async Task<ApiResponse> GetDocumentUrlAsync(int documentId, string userId)
         {
-            var document = await _context.MedicalDocuments.FindAsync(documentId);
+            var document = await _unitOfWork.MedicalDocuments.GetByIdAsync(documentId);
             if (document == null)
                 return ApiResponse.FaliureResponse("Document not found");
             if (document.PatientId != userId)
@@ -143,13 +143,13 @@ namespace Sehha360.Services.implementation
             {
                 var url = await _storageService.GetPreSignedUrlAsync(document.FilePath, TimeSpan.FromMinutes(15));
                 
-                _context.DocumentAccessLogs.Add(new DocumentAccessLog
+                _unitOfWork.DocumentAccessLogs.AddAsync(new DocumentAccessLog
                 {
                     DocumentId = document.Id,
                     AccessedByUserId = userId,
                     AccessedAt = DateTime.UtcNow
                 });
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.SuccessResponse("Secure URL generated successfully.", new { url, expiresAt = DateTime.UtcNow.AddMinutes(15) });
             }
@@ -162,7 +162,7 @@ namespace Sehha360.Services.implementation
 
         public async Task<ApiResponse> SummarizeDocumentAsync(int documentId, string userId)
         {
-            var document = await _context.MedicalDocuments.FindAsync(documentId);
+            var document = await _unitOfWork.MedicalDocuments.GetByIdAsync(documentId);
             if (document == null)
                 return ApiResponse.FaliureResponse("Document not found");
 
@@ -182,7 +182,7 @@ namespace Sehha360.Services.implementation
                 
                 document.PatientSummary = summary;
                 // Keep Processed status since it was already set after OCR, but update is fine
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse.SuccessResponse("Medical summary generated successfully.", new { summary });
             }
@@ -190,6 +190,41 @@ namespace Sehha360.Services.implementation
             {
                 _logger.LogError(ex, "Error generating summary for document {DocId}", documentId);
                 return ApiResponse.FaliureResponse("Error generating medical summary. Please try again later.");
+            }
+        }
+
+        public async Task<ApiResponse> GetHistorySummaryAsync(string userId)
+        {
+            try
+            {
+                // Fetch all documents for this patient that have a medical summary
+                var documents = await _unitOfWork.MedicalDocuments.FindAsync(d => 
+                    d.PatientId == userId && 
+                    !string.IsNullOrEmpty(d.PatientSummary) && 
+                    !d.PatientSummary.Contains("not medical"));
+
+                if (documents == null || !documents.Any())
+                {
+                    return ApiResponse.SuccessResponse("No completed medical summaries found in your history to aggregate.", new { summary = "No medical history available yet." });
+                }
+
+                // Format summaries chronologically for the AI
+                var chronologicallyOrderedSummaries = documents
+                    .OrderBy(d => d.UploadedAt)
+                    .Select(d => $"[Date: {d.UploadedAt:yyyy-MM-dd}] [File: {d.FileName}]\nSUMMARY: {d.PatientSummary}")
+                    .ToList();
+
+                using var scope = _scopeFactory.CreateScope();
+                var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
+
+                var masterSummary = await summaryService.SummarizeMedicalHistoryAsync(chronologicallyOrderedSummaries);
+
+                return ApiResponse.SuccessResponse("Master health overview generated successfully.", new { summary = masterSummary });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating history summary for user {UserId}", userId);
+                return ApiResponse.FaliureResponse("An error occurred while generating your health overview. Please try again later.");
             }
         }
 

@@ -14,6 +14,8 @@ namespace Sehha360.Repositories.Implementation
         public IRepository<MedicationReminders> MedicationReminders { get; }
         public IRepository<UserMedications> UserMedications { get; }
         public IRepository<UserRelationships> UserRelationships { get; }
+        public IRepository<MedicalDocument> MedicalDocuments { get; }
+        public IRepository<DocumentAccessLog> DocumentAccessLogs { get; }
         public IOtpRepository OTPs { get; }
 
 
@@ -22,7 +24,10 @@ namespace Sehha360.Repositories.Implementation
             IRepository<Medication> medications,
             IRepository<MedicationReminders> medicationReminders,
             IRepository<UserMedications> userMedications,
-            IRepository<UserRelationships> userRelationships, IOtpRepository oTPs)
+            IRepository<UserRelationships> userRelationships, 
+            IRepository<MedicalDocument> medicalDocuments,
+            IRepository<DocumentAccessLog> documentAccessLogs,
+            IOtpRepository oTPs)
         {
             _context = context;
             DoctorPatients = doctorPatients;
@@ -31,6 +36,8 @@ namespace Sehha360.Repositories.Implementation
             MedicationReminders = medicationReminders;
             UserMedications = userMedications;
             UserRelationships = userRelationships;
+            MedicalDocuments = medicalDocuments;
+            DocumentAccessLogs = documentAccessLogs;
             OTPs = oTPs;
             AppUsers = appUsers;
         }

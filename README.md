@@ -209,6 +209,28 @@ Generates a patient-friendly AI medical summary for a previously uploaded docume
     ```
   - `400 Bad Request`: If OCR extraction is not yet complete or the document is not medical.
 
+  - `400 Bad Request`: If OCR extraction is not yet complete or the document is not medical.
+
+### Get History Summary
+Aggregates all previous medical summaries for the patient into a single, comprehensive health journey overview.
+
+- **URL**: `/history-summary`
+- **Method**: `GET`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Master health overview generated successfully.",
+      "data": {
+        "summary": "## Health Journey Overview\nOverall, your medical reports show a steady improvement in..."
+      },
+      "errors": []
+    }
+    ```
+  - `200 OK` (Empty): If no previous summaries exist, it returns a friendly message.
+
 ### Get Document URL
 Generates a 15-minute secure signed URL for a specific document.
 

@@ -60,5 +60,19 @@ namespace Sehha360.Controllers
 
             return BadRequest(response);
         }
+
+        [HttpGet("history-summary")]
+        public async Task<IActionResult> GetHistorySummary()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized"));
+
+            var response = await _documentService.GetHistorySummaryAsync(userId);
+            if (response.Success)
+                return Ok(response);
+
+            return BadRequest(response);
+        }
     }
 }

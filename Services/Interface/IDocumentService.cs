@@ -8,5 +8,6 @@ namespace Sehha360.Services.Interface
         Task<ApiResponse> GetDocumentUrlAsync(int documentId, string userId);
         Task<ApiResponse> SummarizeDocumentAsync(int documentId, string userId);
         Task<ApiResponse> GetHistorySummaryAsync(string userId);
+        Task<ApiResponse> GetDocumentSummaryAsync(int documentId, string userId);
     }
 }

@@ -229,6 +229,23 @@ namespace Sehha360.Services.implementation
             }
         }
 
+        public async Task<ApiResponse> GetDocumentSummaryAsync(int documentId, string userId)
+        {
+            var document = await _unitOfWork.MedicalDocuments.GetByIdAsync(documentId);
+            if (document == null)
+                return ApiResponse.FaliureResponse("Document not found");
+
+            if (document.PatientId != userId)
+                return ApiResponse.FaliureResponse("Unauthorized to access this document summary");
+
+            if (string.IsNullOrWhiteSpace(document.PatientSummary))
+            {
+                return ApiResponse.FaliureResponse("This document has not been summarized yet. Please trigger the summarization first.");
+            }
+
+            return ApiResponse.SuccessResponse("Document summary retrieved successfully.", new { summary = document.PatientSummary });
+        }
+
         private DocumentType GetDocumentType(string extension)
         {
             return extension switch

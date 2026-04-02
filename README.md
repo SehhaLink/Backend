@@ -211,6 +211,28 @@ Generates a patient-friendly AI medical summary for a previously uploaded docume
 
   - `400 Bad Request`: If OCR extraction is not yet complete or the document is not medical.
 
+  - `400 Bad Request`: If OCR extraction is not yet complete or the document is not medical.
+
+### Get Document Summary
+Retrieves an existing AI medical summary for a specific document.
+
+- **URL**: `/{id}/summary`
+- **Method**: `GET`
+- **Auth**: Required
+- **Response**:
+  - `200 OK`:
+    ```json
+    {
+      "success": true,
+      "message": "Document summary retrieved successfully.",
+      "data": {
+        "summary": "## Summary\nYour blood test results show..."
+      },
+      "errors": []
+    }
+    ```
+  - `400 Bad Request`: If the document hasn't been summarized yet.
+
 ### Get History Summary
 Aggregates all previous medical summaries for the patient into a single, comprehensive health journey overview.
 

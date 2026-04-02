@@ -74,5 +74,19 @@ namespace Sehha360.Controllers
 
             return BadRequest(response);
         }
+
+        [HttpGet("{id}/summary")]
+        public async Task<IActionResult> GetDocumentSummary(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized(ApiResponse.FaliureResponse("Unauthorized"));
+
+            var response = await _documentService.GetDocumentSummaryAsync(id, userId);
+            if (response.Success)
+                return Ok(response);
+
+            return BadRequest(response);
+        }
     }
 }

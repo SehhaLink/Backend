@@ -33,27 +33,26 @@ namespace Sehha360.Services.implementation
 
             try
             {
-                var prompt = @"You are a strict medical parser for the Sehha360 app. Analyze the following extracted text from a user upload.
-First, determine if the text is a medical document, health-related test result, or prescription.
-If it is NOT a medical document, you MUST reply with EXACTLY this phrase and nothing else: ""Provided document is not medical. Please upload a medical document.""
-If it IS a medical document, provide a summary explaining the findings in simple, patient-friendly terms. Clarify any medical jargon or numbers.
-CRITICAL RULES:
-1. DO NOT include ANY greetings, conversational filler, introductions, or closing encouragements (e.g., no ""Hello"", no ""Here is your summary""). Start directly with the markdown formatted data.
-2. Tell the patient to always consult their doctor at the very end.
-3. Keep the output clean and strict.
+                var prompt = @"You are a strict medical parser for the Sehha360 app.
+Analyze the following extracted text from a user upload.
+
+STRICT INSTRUCTIONS:
+1. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""Provided document is not medical. Please upload a medical document.""
+2. If it IS a medical document, provide a summary explaining the findings in simple, patient-friendly terms. Clarify any medical jargon or numbers.
+3. For medical summaries, DO NOT include ANY greetings, conversational filler, or introductions. Start directly with the summary.
+4. For medical summaries, ALWAYS end with: ""Always consult your doctor.""
+5. Keep the output clean and strict.
 
 TEXT TO ANALYZE:
 " + extractedText;
 
                 var payload = new
                 {
-                    model = "openai/gpt-oss-120b",
+                    model = "llama-3.3-70b-versatile",
                     temperature = 1,
-                    max_completion_tokens = 8192,
+                    // max_completion_tokens = 8192,
                     top_p = 1,
-                    stream = false, // Must be false for background DB JSON parsing
-                    reasoning_effort = "medium",
-                    stop = (string?)null,
+                    stream = false,
                     messages = new[]
                     {
                         new { role = "user", content = prompt }
@@ -116,7 +115,7 @@ Your task is to analyze these summaries and provide a single, high-level ""Maste
 
 GOALS:
 1. Summarize the patient's overall health journey.
-2. Identify trends (e.g. ""Your blood pressure has consistently decreased over the last 6 months"").
+2. Identify trends.
 3. Note any recurring issues or significant improvements.
 4. Provide a concise, structured timeline of major events.
 
@@ -131,9 +130,9 @@ PATIENT SUMMARY HISTORY:
 
                 var payload = new
                 {
-                    model = "openai/gpt-oss-120b",
-                    temperature = 0.7, // Slightly lower for history aggregation to be more grounded
-                    max_completion_tokens = 8192,
+                    model = "llama-3.3-70b-versatile",
+                    temperature = 0.7,
+                    // max_completion_tokens = 8192,
                     top_p = 1,
                     stream = false,
                     messages = new []

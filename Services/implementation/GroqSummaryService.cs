@@ -37,11 +37,12 @@ namespace Sehha360.Services.implementation
 Analyze the following extracted text from a user upload.
 
 STRICT INSTRUCTIONS:
-1. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""Provided document is not medical. Please upload a medical document.""
-2. If it IS a medical document, provide a summary explaining the findings in simple, patient-friendly terms. Clarify any medical jargon or numbers.
-3. For medical summaries, DO NOT include ANY greetings, conversational filler, or introductions. Start directly with the summary.
-4. For medical summaries, ALWAYS end with: ""Always consult your doctor.""
-5. Keep the output clean and strict.
+1. Provide the response in Egyptian Arabic (بالعامية المصرية).
+2. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""Provided document is not medical. Please upload a medical document.""
+3. If it IS a medical document, provide a summary explaining the findings in simple, patient-friendly Egyptian Arabic. Clarify any medical jargon or numbers.
+4. For medical summaries, DO NOT include ANY greetings, conversational filler, or introductions. Start directly with the summary data.
+5. For medical summaries, ALWAYS end with: ""Always consult your doctor.""
+6. Keep the output clean and strict.
 
 TEXT TO ANALYZE:
 " + extractedText;
@@ -113,17 +114,13 @@ TEXT TO ANALYZE:
 You will be provided with a series of individual medical reports and test summaries belonging to a single patient, ordered chronologically.
 Your task is to analyze these summaries and provide a single, high-level ""Master Health Overview"".
 
-GOALS:
-1. Summarize the patient's overall health journey.
-2. Identify trends.
-3. Note any recurring issues or significant improvements.
-4. Provide a concise, structured timeline of major events.
-
 STRICT RULES:
-1. DO NOT include any greetings, introductions, or conversational filler.
-2. Use professional yet simple, patient-friendly language.
-3. Use Markdown for formatting (headings, bullet points).
-4. ALWAYS end with a disclaimer: ""This is an AI-generated aggregation. Please consult your physician for a full clinical review of your history.""
+1. Provide the entire response in Egyptian Arabic (بالعامية المصرية).
+2. If the summary history is not medical or too poor to aggregate, return ONLY: ""No medical history available to summarize.""
+3. Summarize the patient's overall health journey and identify trends.
+4. DO NOT include any greetings, introductions, or conversational filler.
+5. Use Markdown for formatting (headings, bullet points).
+6. ALWAYS end in egyption arabic with a disclaimer: ""This is an AI-generated aggregation. Please consult your physician for a full clinical review of your history.""
 
 PATIENT SUMMARY HISTORY:
 " + historyText;

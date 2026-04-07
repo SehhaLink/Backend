@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Sehha360.Services.Interface;
 
 namespace Sehha360.Services.implementation
@@ -37,13 +38,14 @@ namespace Sehha360.Services.implementation
 Analyze the following extracted text from a user upload.
 
 STRICT INSTRUCTIONS:
-1. ALL OUTPUT MUST BE EXCLUSIVELY IN ENGLISH. Do not use any other language.
+1. First, process the information internally in English to ensure accuracy, but YOUR FINAL AND ONLY OUTPUT MUST BE EXCLUSIVELY IN SIMPLE EGYPTIAN ARABIC. DO NOT output any English text.
 2. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""Provided document is not medical. Please upload a medical document.""
-3. If it IS a medical document, provide a very simple, plain-English summary of the findings that anyone without a medical background can easily understand. Address the user directly in the second person (e.g., ""Your test results show..."").
-4. Avoid complicated medical terms, jargon, and complex descriptions. If a medical term must be used, explain it in the simplest possible everyday words.
-5. DO NOT include ANY greetings, conversational filler, or introductions. Start directly with the summary data.
-6. ALWAYS end with: ""Always consult your doctor.""
-7. Keep the output clean, strict, and purely informative.
+3. If it IS a medical document, provide a very simple, plain-language summary of the findings that anyone without a medical background can easily understand. Address the user directly in the second person (e.g., ""نتائج فحوصاتك بتوضح..."").
+4. Avoid complicated medical terms, jargon, and complex descriptions. If a medical term must be used, explain it in the simplest possible everyday Egyptian Arabic words.
+5. DO NOT use any Markdown formatting (no asterisks, bolding, italics, or hash symbols). Return ONLY raw plain text.
+6. DO NOT include ANY greetings, conversational filler, or introductions. Start directly with the summary data.
+7. ALWAYS end with a disclaimer: ""هذا ملخص تم إنشاؤه بواسطة الذكاء الاصطناعي. يرجى استشارة طبيبك.""
+8. Keep the output clean, strict, and purely informative.
 
 TEXT TO ANALYZE:
 " + extractedText;
@@ -85,7 +87,8 @@ TEXT TO ANALYZE:
                     var firstChoice = choices[0];
                     if (firstChoice.TryGetProperty("message", out var message) && message.TryGetProperty("content", out var content))
                     {
-                        return content.GetString()?.Trim() ?? "Failed to generate a readable summary.";
+                        var rawSummary = content.GetString()?.Trim() ?? "Failed to generate a readable summary.";
+                        return SanitizeArabicText(rawSummary);
                     }
                 }
 
@@ -116,13 +119,13 @@ You will be provided with a series of individual medical reports and test summar
 Your task is to analyze these summaries and provide a single, high-level ""Master Health Overview"".
 
 STRICT RULES:
-1. ALL OUTPUT MUST BE EXCLUSIVELY IN ENGLISH. Do not use any other language.
+1. First, process the information internally in English to ensure accuracy, but YOUR FINAL AND ONLY OUTPUT MUST BE EXCLUSIVELY IN SIMPLE EGYPTIAN ARABIC. DO NOT output any English text.
 2. If the summary history is not medical or too poor to aggregate, return ONLY: ""No medical history available to summarize.""
-3. Summarize the patient's overall health journey and identify trends using extremely simple, everyday English. Address the user directly in the second person (e.g., ""Your medical history indicates..."").
+3. Summarize the patient's overall health journey and identify trends using extremely simple, everyday Egyptian Arabic. Address the user directly in the second person (e.g., ""تاريخك الطبي بيوضح..."").
 4. DO NOT use complicated medical terms, jargon, or complex descriptions. Explain any necessary medical concepts so that a layperson can easily understand them.
-5. DO NOT include any greetings, introductions, or conversational filler.
-6. Use Markdown for formatting (headings, bullet points).
-7. ALWAYS end with a disclaimer: ""This is an AI-generated aggregation. Please consult your physician.""
+5. DO NOT use any Markdown formatting (no asterisks, bolding, italics, or hash symbols). Return ONLY raw plain text.
+6. DO NOT include any greetings, introductions, or conversational filler.
+7. ALWAYS end with a disclaimer: ""هذا ملخص تم إنشاؤه بواسطة الذكاء الاصطناعي. يرجى استشارة طبيبك.""
 
 PATIENT SUMMARY HISTORY:
 " + historyText;
@@ -164,7 +167,8 @@ PATIENT SUMMARY HISTORY:
                     var firstChoice = choices[0];
                     if (firstChoice.TryGetProperty("message", out var message) && message.TryGetProperty("content", out var content))
                     {
-                        return content.GetString()?.Trim() ?? "Failed to generate a readable history overview.";
+                        var rawSummary = content.GetString()?.Trim() ?? "Failed to generate a readable history overview.";
+                        return SanitizeArabicText(rawSummary);
                     }
                 }
 
@@ -175,6 +179,11 @@ PATIENT SUMMARY HISTORY:
                 _logger.LogError(ex, "Exception during Groq history summarization.");
                 return $"Summarization error: {ex.Message}";
             }
+        }
+        private string SanitizeArabicText(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            return Regex.Replace(input, @"[^\p{IsArabic}\s\d.,!؟""'،؛\-%()]+", "");
         }
     }
 }

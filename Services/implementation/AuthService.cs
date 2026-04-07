@@ -141,6 +141,24 @@ namespace Sehha360.Services.implementation
 
             return ApiResponse.SuccessResponse("Password has been reset successfully. You can now log in with your new password.");
         }
+
+        public async Task<ApiResponse> ChangePasswordAsync(ChangePasswordDTO dto, string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return ApiResponse.FaliureResponse("User not found");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.FaliureResponse("Change password failed", errors);
+            }
+
+            return ApiResponse.SuccessResponse("Password changed successfully");
+        }
         public async Task<string> GenerateJwtTokenAsync(AppUser appUser)
         {
             var roles = await _userManager.GetRolesAsync(appUser);

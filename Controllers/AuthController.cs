@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Sehha360.Models.ApiResponse;
 using Sehha360.Models.DTOs;
 using Sehha360.Services.implementation;
@@ -71,6 +73,30 @@ namespace Sehha360.Controllers
                 return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
             }
             var response = await _authService.ResetPasswordAsync(resetPasswordDTO);
+            if (response.Success)
+                return Ok(response);
+            else
+                return BadRequest(response);
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDTO changePasswordDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).
+                    Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse.FaliureResponse("User is not authorized"));
+            }
+
+            var response = await _authService.ChangePasswordAsync(changePasswordDTO, userId);
             if (response.Success)
                 return Ok(response);
             else

@@ -78,12 +78,18 @@ namespace Sehha360.Services.implementation
             }
             return ApiResponse.SuccessResponse("Profile updated successfully", responseDto);
         }
-        public async Task<ApiResponse> DeactivateMeAsync(string userId)
+        public async Task<ApiResponse> DeactivateMeAsync(string userId, string password)
         {
             var appUser = await _userManager.FindByIdAsync(userId);
             if (appUser == null)
             {
                 return ApiResponse.FaliureResponse("User not found");
+            }
+
+            var passwordCheck = await _userManager.CheckPasswordAsync(appUser, password);
+            if (!passwordCheck)
+            {
+                return ApiResponse.FaliureResponse("Invalid password");
             }
 
             if (appUser.IsDeactivated)
@@ -104,12 +110,18 @@ namespace Sehha360.Services.implementation
             return ApiResponse.SuccessResponse("Account deactivated successfully. You have 30 days to reactivate your account by logging in.");
         }
 
-        public async Task<ApiResponse> HardDeleteMeAsync(string userId)
+        public async Task<ApiResponse> HardDeleteMeAsync(string userId, string password)
         {
             var appUser = await _userManager.FindByIdAsync(userId);
             if (appUser == null)
             {
                 return ApiResponse.FaliureResponse("User not found");
+            }
+
+            var passwordCheck = await _userManager.CheckPasswordAsync(appUser, password);
+            if (!passwordCheck)
+            {
+                return ApiResponse.FaliureResponse("Invalid password");
             }
 
             var result = await _userManager.DeleteAsync(appUser);

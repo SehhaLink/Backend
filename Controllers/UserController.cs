@@ -63,15 +63,22 @@ namespace Sehha360.Controllers
         }
 
         [HttpPost("deactivate")]
-        public async Task<IActionResult> DeactivateMe()
+        public async Task<IActionResult> DeactivateMe([FromBody] PasswordConfirmDTO dto)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
             }
 
-            var response = await _userService.DeactivateMeAsync(userId);
+            var response = await _userService.DeactivateMeAsync(userId, dto.Password);
             if (response.Success)
             {
                 return Ok(response);
@@ -81,15 +88,22 @@ namespace Sehha360.Controllers
         }
 
         [HttpDelete("me")]
-        public async Task<IActionResult> DeleteMe()
+        public async Task<IActionResult> DeleteMe([FromBody] PasswordConfirmDTO dto)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse.FaliureResponse("Validation failed", errors));
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(ApiResponse.FaliureResponse("Unauthorized", new List<string> { "Missing user id claim" }));
             }
 
-            var response = await _userService.HardDeleteMeAsync(userId);
+            var response = await _userService.HardDeleteMeAsync(userId, dto.Password);
             if (response.Success)
             {
                 return Ok(response);

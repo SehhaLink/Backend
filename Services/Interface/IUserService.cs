@@ -7,8 +7,8 @@ namespace Sehha360.Services.Interface
     {
         Task<ApiResponse> GetMeAsync(string userId);
         Task<ApiResponse> UpdateMeAsync(string userId, UpdateMeDTO dto);
-        Task<ApiResponse> DeactivateMeAsync(string userId);
-        Task<ApiResponse> HardDeleteMeAsync(string userId);
+        Task<ApiResponse> DeactivateMeAsync(string userId, string password);
+        Task<ApiResponse> HardDeleteMeAsync(string userId, string password);
         Task<ApiResponse> UploadProfilePictureAsync(string userId, IFormFile file);
     }
 }

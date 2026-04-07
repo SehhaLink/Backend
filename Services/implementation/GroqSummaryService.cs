@@ -39,7 +39,7 @@ Analyze the following extracted text from a user upload.
 
 STRICT INSTRUCTIONS:
 1. First, process the information internally in English to ensure accuracy, but YOUR FINAL AND ONLY OUTPUT MUST BE EXCLUSIVELY IN SIMPLE EGYPTIAN ARABIC. DO NOT output any English text.
-2. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""Provided document is not medical. Please upload a medical document.""
+2. If the text is NOT a medical document, health-related test result, or prescription, you MUST reply with EXACTLY this phrase and NOTHING ELSE: ""هذا المستند ليس تقريراً طبياً.""
 3. If it IS a medical document, provide a very simple, plain-language summary of the findings that anyone without a medical background can easily understand. Address the user directly in the second person (e.g., ""نتائج فحوصاتك بتوضح..."").
 4. Avoid complicated medical terms, jargon, and complex descriptions. If a medical term must be used, explain it in the simplest possible everyday Egyptian Arabic words.
 5. DO NOT use any Markdown formatting (no asterisks, bolding, italics, or hash symbols). Return ONLY raw plain text.
@@ -120,7 +120,7 @@ Your task is to analyze these summaries and provide a single, high-level ""Maste
 
 STRICT RULES:
 1. First, process the information internally in English to ensure accuracy, but YOUR FINAL AND ONLY OUTPUT MUST BE EXCLUSIVELY IN SIMPLE EGYPTIAN ARABIC. DO NOT output any English text.
-2. If the summary history is not medical or too poor to aggregate, return ONLY: ""No medical history available to summarize.""
+2. If the summary history is not medical or too poor to aggregate, return ONLY: ""لا يوجد تاريخ طبي للتجميع.""
 3. Summarize the patient's overall health journey and identify trends using extremely simple, everyday Egyptian Arabic. Address the user directly in the second person (e.g., ""تاريخك الطبي بيوضح..."").
 4. DO NOT use complicated medical terms, jargon, or complex descriptions. Explain any necessary medical concepts so that a layperson can easily understand them.
 5. DO NOT use any Markdown formatting (no asterisks, bolding, italics, or hash symbols). Return ONLY raw plain text.

@@ -13,5 +13,6 @@ namespace Sehha360.Models
         public bool IsDeactivated { get; set; }
         public DateTime? DeactivationDate { get; set; }
         public string? ProfilePictureKey { get; set; }
+        public string? MasterHistorySummary { get; set; }
     }
 }

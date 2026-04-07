@@ -173,17 +173,30 @@ namespace Sehha360.Services.implementation
             if (string.IsNullOrWhiteSpace(document.ExtractedText) || document.ExtractedText.StartsWith("OCR failed"))
                 return ApiResponse.FaliureResponse("Document text hasn't been extracted yet or extraction failed. Please wait a moment or try re-uploading.");
 
+            if (!string.IsNullOrWhiteSpace(document.PatientSummary))
+                return ApiResponse.SuccessResponse("Medical summary retrieved successfully.", new { summary = document.PatientSummary });
+
             try
             {
-                // Resolve AI service through scope to ensure thread safety or DI lifestyle
                 using var scope = _scopeFactory.CreateScope();
                 var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
 
                 var summary = await summaryService.SummarizeMedicalTextAsync(document.ExtractedText);
                 
+                if (string.IsNullOrWhiteSpace(summary) || summary.Contains("ليس تقريراً طبياً") || summary.Contains("not medical"))
+                {
+                    return ApiResponse.FaliureResponse("هذا المستند ليس تقريراً طبياً. يرجى رفع مستند طبي.");
+                }
+
                 document.PatientSummary = summary;
                 // Keep Processed status since it was already set after OCR, but update is fine
                 await _unitOfWork.SaveChangesAsync();
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.MasterHistorySummary = null;
+                    await _userManager.UpdateAsync(user);
+                }
 
                 return ApiResponse.SuccessResponse("Medical summary generated successfully.", new { summary });
             }
@@ -198,11 +211,21 @@ namespace Sehha360.Services.implementation
         {
             try
             {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                    return ApiResponse.FaliureResponse("User not found.");
+
+                if (!string.IsNullOrWhiteSpace(user.MasterHistorySummary))
+                {
+                    return ApiResponse.SuccessResponse("Master health overview retrieved successfully.", new { summary = user.MasterHistorySummary });
+                }
+
                 // Fetch all documents for this patient that have a medical summary
                 var documents = await _unitOfWork.MedicalDocuments.FindAsync(d => 
                     d.PatientId == userId && 
                     !string.IsNullOrEmpty(d.PatientSummary) && 
-                    !d.PatientSummary.Contains("not medical"));
+                    !d.PatientSummary.Contains("not medical") &&
+                    !d.PatientSummary.Contains("ليس تقريراً طبياً"));
 
                 if (documents == null || !documents.Any())
                 {
@@ -219,6 +242,12 @@ namespace Sehha360.Services.implementation
                 var summaryService = scope.ServiceProvider.GetRequiredService<ILlmSummaryService>();
 
                 var masterSummary = await summaryService.SummarizeMedicalHistoryAsync(chronologicallyOrderedSummaries);
+
+                if (!string.IsNullOrWhiteSpace(masterSummary) && !masterSummary.Contains("لا يوجد تاريخ طبي للتجميع") && !masterSummary.Contains("No medical history available"))
+                {
+                    user.MasterHistorySummary = masterSummary;
+                    await _userManager.UpdateAsync(user);
+                }
 
                 return ApiResponse.SuccessResponse("Master health overview generated successfully.", new { summary = masterSummary });
             }
